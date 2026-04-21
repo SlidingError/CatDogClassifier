@@ -1,0 +1,232 @@
+<!-- frontend/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Cat-Dog Classifier</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #111;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 520px;
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 12px;
+    font-size: 28px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 24px;
+}
+
+.upload-box {
+    border: 2px dashed #cfd6dd;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 18px;
+    background: #fafafa;
+}
+
+input[type="file"] {
+    margin-top: 12px;
+}
+
+.preview {
+    margin-top: 18px;
+    text-align: center;
+}
+
+.preview img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 12px;
+}
+
+button {
+    width: 100%;
+    border: none;
+    background: #111;
+    color: white;
+    padding: 14px;
+    font-size: 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    margin-top: 18px;
+}
+
+button:hover {
+    opacity: 0.92;
+}
+
+button:disabled {
+    background: #888;
+    cursor: not-allowed;
+}
+
+.result {
+    margin-top: 24px;
+    padding: 18px;
+    border-radius: 12px;
+    background: #f1f5f9;
+}
+
+.result h2 {
+    margin-bottom: 8px;
+}
+
+.hidden {
+    display: none;
+}
+
+.loading {
+    margin-top: 18px;
+    text-align: center;
+    color: #555;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Cat-Dog Classifier</h1>
+    <p class="subtitle">
+        Upload an image and classify it using ResNet18
+    </p>
+
+    <div class="upload-box">
+        <p>Select an image file</p>
+        <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <div class="preview hidden" id="previewBox">
+        <img id="previewImage" src="">
+    </div>
+
+    <button id="predictBtn" onclick="predictImage()">
+        Predict
+    </button>
+
+    <div class="loading hidden" id="loadingText">
+        Running inference...
+    </div>
+
+    <div class="result hidden" id="resultBox">
+        <h2>Prediction Result</h2>
+        <p id="labelText"></p>
+        <p id="confidenceText"></p>
+    </div>
+
+</div>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const previewBox = document.getElementById("previewBox");
+const previewImage = document.getElementById("previewImage");
+
+const resultBox = document.getElementById("resultBox");
+const labelText = document.getElementById("labelText");
+const confidenceText = document.getElementById("confidenceText");
+
+const loadingText = document.getElementById("loadingText");
+const predictBtn = document.getElementById("predictBtn");
+
+
+// ------------------------------------------
+// Preview image after selection
+// ------------------------------------------
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+
+    if (!file) return;
+
+    const imageURL = URL.createObjectURL(file);
+
+    previewImage.src = imageURL;
+    previewBox.classList.remove("hidden");
+    resultBox.classList.add("hidden");
+});
+
+
+// ------------------------------------------
+// Send image to backend
+// ------------------------------------------
+async function predictImage() {
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please choose an image first.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    loadingText.classList.remove("hidden");
+    resultBox.classList.add("hidden");
+    predictBtn.disabled = true;
+
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:8000/predict",
+            {
+                method: "POST",
+                body: formData
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Prediction failed.");
+        }
+
+        labelText.innerText =
+            "Label: " + data.prediction;
+
+        confidenceText.innerText =
+            "Confidence: " +
+            (data.confidence * 100).toFixed(2) + "%";
+
+        resultBox.classList.remove("hidden");
+
+    } catch (error) {
+        alert(error.message);
+    }
+
+    loadingText.classList.add("hidden");
+    predictBtn.disabled = false;
+}
+</script>
+
+</body>
+</html>
