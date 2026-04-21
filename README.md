@@ -1,4 +1,3 @@
-```md
 # Cat-Dog Classifier (ResNet18 + FastAPI + Frontend)
 
 A full-stack image classification project that predicts whether an uploaded image contains a cat or dog using a fine-tuned ResNet18 model. The backend is built with FastAPI, and the frontend uses plain HTML, CSS, and JavaScript.
